@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGPA Calculator - Coder Theme</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: #252526;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            width: 600px;
+            max-width: 100%;
+            margin: 0 auto;
+            border: 1px solid #3c3c3c;
+        }
+
+        h1 {
+            color: #569cd6;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+        }
+
+        .student-details {
+            margin-bottom: 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .student-details input {
+            padding: 0.6rem;
+            border: 1px solid #3c3c3c;
+            border-radius: 4px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-size: 0.9rem;
+        }
+
+        .student-details input:focus {
+            outline: none;
+            border-color: #569cd6;
+        }
+
+        .formula {
+            text-align: center;
+            color: #9cdcfe;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .subject-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+            align-items: center;
+        }
+
+        input, select {
+            padding: 0.6rem;
+            border: 1px solid #3c3c3c;
+            border-radius: 4px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-size: 0.9rem;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #569cd6;
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 0.6rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        #addSubject { background: #4ec9b0; }
+        #calculate { background: #569cd6; }
+        #reset { background: #ce9178; }
+        #save { background: #b5cea8; }
+        #downloadPDF { background: #d7ba7d; }
+        #submitCode { background: #4ec9b0; }
+
+        .btn:hover {
+            filter: brightness(1.2);
+        }
+
+        .result {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #1e1e1e;
+            border: 1px solid #3c3c3c;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .remove-btn {
+            background: #d16969;
+            padding: 0.4rem;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .stats {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: #9cdcfe;
+        }
+
+        .footer {
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #9cdcfe;
+        }
+
+        .footer a {
+            color: #569cd6;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        #codeInputContainer {
+            display: none;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        #codeInputContainer.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CGPA Calculator</h1>
+        <div class="student-details">
+            <input type="text" id="studentName" placeholder="Student Name">
+            <input type="text" id="rollNumber" placeholder="Roll Number">
+            <input type="text" id="semester" placeholder="Semester">
+            <input type="text" id="department" placeholder="Department">
+        </div>
+        <div class="formula">
+            CGPA = (Σ(grade_i * credit_i)) / Σ(credit_i)
+        </div>
+        <div id="subjects">
+            <div class="subject-row">
+                <input type="text" class="subject-name" placeholder="Subject Name">
+                <input type="number" class="credits" placeholder="Credits" min="1" max="10">
+                <select class="grade">
+                    <option value="10">A+ (10)</option>
+                    <option value="9">A (9)</option>
+                    <option value="8">B+ (8)</option>
+                    <option value="7">B (7)</option>
+                    <option value="6">C+ (6)</option>
+                    <option value="5">C (5)</option>
+                    <option value="4">D (4)</option>
+                    <option value="0">F (0)</option>
+                </select>
+                <input type="number" class="marks" placeholder="Marks" min="0" max="100">
+                <button class="btn remove-btn">X</button>
+            </div>
+        </div>
+        <div class="button-group">
+            <button id="addSubject" class="btn">Add Subject</button>
+            <button id="calculate" class="btn">Calculate</button>
+            <button id="reset" class="btn">Reset</button>
+            <button id="save" class="btn">Save JSON</button>
+            <button id="downloadPDF" class="btn">Download PDF</button>
+        </div>
+        <div id="result" class="result">
+            <h3>CGPA: <span id="cgpaValue">0.00</span></h3>
+            <div class="stats">
+                <p>Total Credits: <span id="totalCredits">0</span></p>
+                <p>Average Marks: <span id="avgMarks">0</span>%</p>
+                <p>Grade Distribution: <span id="gradeDist"></span></p>
+            </div>
+        </div>
+        <div id="codeInputContainer">
+            <p>Enter the code received after purchase:
+            </br> <a href="https://github.com/011100110110100101100100" target="_blank">If not then Buy </a></p>
+            <input type="text" id="codeInput" placeholder="Enter code">
+            <button id="submitCode" class="btn">Submit</button>
+        </div>
+    </div>
+    <div class="footer">
+        Made with ❤️ by <a href="https://github.com/011100110110100101100100" target="_blank">Sidhant Ugale</a>
+    </div>
+
+    <script>
+        const { jsPDF } = window.jspdf;
+        let subjectCount = 1;
+        let isCodeValid = false;
+
+        // Valid codes (not displayed in the tool)
+        const validCodes = [
+            "AJFLK73SKL", "KCMSLF82SX", "AK24LDMCVA",
+            "RPCN93QDNW", "XQR97NSXZY", "83XDLCNPEM",
+            "91CJSXCMLW", "PLDAVNMS21", "MDKL46APDY", "NAJDLFNA29"
+        ];
+
+        // Add new subject row
+        document.getElementById('addSubject').addEventListener('click', addSubject);
+
+        function addSubject() {
+            if (subjectCount >= 7 && !isCodeValid) {
+                document.getElementById('codeInputContainer').classList.add('show');
+                return;
+            }
+
+            const subjectsDiv = document.getElementById('subjects');
+            const newRow = document.createElement('div');
+            newRow.className = 'subject-row';
+            newRow.innerHTML = `
+                <input type="text" class="subject-name" placeholder="Subject Name">
+                <input type="number" class="credits" placeholder="Credits" min="1" max="10">
+                <select class="grade">
+                    <option value="10">A+ (10)</option>
+                    <option value="9">A (9)</option>
+                    <option value="8">B+ (8)</option>
+                    <option value="7">B (7)</option>
+                    <option value="6">C+ (6)</option>
+                    <option value="5">C (5)</option>
+                    <option value="4">D (4)</option>
+                    <option value="0">F (0)</option>
+                </select>
+                <input type="number" class="marks" placeholder="Marks" min="0" max="100">
+                <button class="btn remove-btn">X</button>
+            `;
+            subjectsDiv.appendChild(newRow);
+            subjectCount++;
+
+            if (subjectCount > 7 && isCodeValid) {
+                document.getElementById('codeInputContainer').classList.remove('show');
+            }
+        }
+
+        // Remove subject row
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-btn')) {
+                const rows = document.getElementsByClassName('subject-row');
+                if (rows.length > 1) {
+                    e.target.parentElement.remove();
+                    subjectCount--;
+                }
+            }
+        });
+
+        // Submit code
+        document.getElementById('submitCode').addEventListener('click', function() {
+            const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
+            if (validCodes.includes(codeInput)) {
+                isCodeValid = true;
+                document.getElementById('codeInputContainer').classList.remove('show');
+                document.getElementById('codeInput').value = ''; // Clear input
+                alert('Code accepted! You can now add more subjects.');
+            } else {
+                alert('Invalid code. Please enter a valid code received after purchase.');
+            }
+        });
+
+        // Calculate CGPA and stats
+        let subjectsData = [];
+        let studentDetails = {};
+        document.getElementById('calculate').addEventListener('click', function() {
+            const credits = document.getElementsByClassName('credits');
+            const grades = document.getElementsByClassName('grade');
+            const marks = document.getElementsByClassName('marks');
+            const subjectNames = document.getElementsByClassName('subject-name');
+            
+            // Capture student details
+            studentDetails = {
+                name: document.getElementById('studentName').value || 'N/A',
+                rollNumber: document.getElementById('rollNumber').value || 'N/A',
+                semester: document.getElementById('semester').value || 'N/A',
+                department: document.getElementById('department').value || 'N/A'
+            };
+
+            let totalCredits = 0;
+            let totalPoints = 0;
+            let totalMarks = 0;
+            let gradeDist = {};
+            let isValid = true;
+            subjectsData = [];
+
+            for (let i = 0; i < credits.length; i++) {
+                const credit = parseFloat(credits[i].value) || 0;
+                const grade = parseFloat(grades[i].value);
+                const mark = parseFloat(marks[i].value) || 0;
+                const name = subjectNames[i].value || `Subject ${i + 1}`;
+                const gradeText = grades[i].options[grades[i].selectedIndex].text; // e.g., "A+ (10)"
+
+                if (credit < 1 || credit > 10) {
+                    isValid = false;
+                    credits[i].style.borderColor = '#d16969';
+                } else {
+                    credits[i].style.borderColor = '#3c3c3c';
+                    totalCredits += credit;
+                    totalPoints += credit * grade;
+                    totalMarks += mark;
+                    gradeDist[gradeText] = (gradeDist[gradeText] || 0) + 1;
+                    subjectsData.push({
+                        name: name,
+                        credits: credit,
+                        grade: gradeText,
+                        marks: mark,
+                        gradePoints: grade
+                    });
+                }
+            }
+
+            if (isValid && totalCredits > 0) {
+                const cgpa = (totalPoints / totalCredits).toFixed(2);
+                const avgMarks = (totalMarks / credits.length).toFixed(1);
+                
+                document.getElementById('cgpaValue').textContent = cgpa;
+                document.getElementById('totalCredits').textContent = totalCredits;
+                document.getElementById('avgMarks').textContent = avgMarks;
+                document.getElementById('gradeDist').textContent = 
+                    Object.entries(gradeDist).map(([grade, count]) => `${grade}: ${count}`).join(', ');
+                
+                document.getElementById('result').classList.add('show');
+            } else {
+                alert('Please enter valid credit values (1-10) for all subjects');
+            }
+        });
+
+        // Reset calculator
+        document.getElementById('reset').addEventListener('click', function() {
+            const subjectsDiv = document.getElementById('subjects');
+            subjectsDiv.innerHTML = '';
+            addSubject();
+            document.getElementById('result').classList.remove('show');
+            subjectsData = [];
+            studentDetails = {};
+            document.getElementById('studentName').value = '';
+            document.getElementById('rollNumber').value = '';
+            document.getElementById('semester').value = '';
+            document.getElementById('department').value = '';
+            subjectCount = 1;
+            isCodeValid = false;
+            document.getElementById('codeInputContainer').classList.remove('show');
+            document.getElementById('codeInput').value = '';
+        });
+
+        // Save as JSON
+        document.getElementById('save').addEventListener('click', function() {
+            const dataToSave = {
+                studentDetails: studentDetails,
+                subjects: subjectsData
+            };
+            const dataStr = "data:text/json;charset=utf-8," + 
+                encodeURIComponent(JSON.stringify(dataToSave, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "cgpa_data.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        });
+
+        // Download as PDF
+        document.getElementById('downloadPDF').addEventListener('click', function() {
+            if (!subjectsData.length) {
+                alert('Please calculate CGPA first!');
+                return;
+            }
+
+            const doc = new jsPDF();
+            const pageWidth = doc.internal.pageSize.width;
+            const pageHeight = doc.internal.pageSize.height;
+            const margin = 15;
+
+            // Title Page
+            doc.setFillColor(0, 102, 204);
+            doc.rect(0, 0, pageWidth, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont('helvetica', 'bold');
+            doc.text('CGPA Report', pageWidth / 2, 25, { align: 'center' });
+
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'normal');
+            let y = margin + 50; // Start below the title bar
+
+            // Summary Section (Aligned like the image)
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Final CGPA: ${document.getElementById('cgpaValue').textContent}`, margin, y);
+            y += 10;
+            doc.text(`Total Credits: ${document.getElementById('totalCredits').textContent}`, margin, y);
+            y += 10;
+            doc.text(`Average Marks: ${document.getElementById('avgMarks').textContent}%`, margin, y);
+            y += 10;
+            doc.text(`Grade Distribution: ${document.getElementById('gradeDist').textContent}`, margin, y);
+            y += 20;
+
+            // Student Details Section
+            doc.setFontSize(14);
+            doc.setTextColor(0, 102, 204);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Student Details', margin, y + 10);
+            doc.setDrawColor(0, 102, 204);
+            doc.line(margin, y + 12, pageWidth - margin, y + 12);
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'normal');
+            y += 20;
+            doc.text(`Name: ${studentDetails.name}`, margin, y);
+            doc.text(`Roll Number: ${studentDetails.rollNumber}`, margin, y + 8);
+            doc.text(`Semester: ${studentDetails.semester}`, margin + 90, y);
+            doc.text(`Department: ${studentDetails.department}`, margin + 90, y + 8);
+            y += 25;
+
+            // Formula Section
+            doc.setFontSize(14);
+            doc.setTextColor(0, 102, 204);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Calculation Formula', margin, y + 10);
+            doc.setDrawColor(0, 102, 204);
+            doc.line(margin, y + 12, pageWidth - margin, y + 12);
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'normal');
+            y += 20;
+            doc.text('CGPA = Sum(grade[i] * credit[i]) / Sum(credit[i])', margin, y);
+            y += 15;
+
+            // Subjects Table Section
+            doc.setFontSize(14);
+            doc.setTextColor(0, 102, 204);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Subject Details', margin, y + 10);
+            doc.setDrawColor(0, 102, 204);
+            doc.line(margin, y + 12, pageWidth - margin, y + 12);
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'normal');
+            y += 20;
+            // Table Header
+            doc.setFillColor(200, 200, 200);
+            doc.rect(margin, y, pageWidth - 2 * margin, 8, 'F');
+            doc.text('Subject', margin + 2, y + 5);
+            doc.text('Credits', margin + 50, y + 5);
+            doc.text('Grade', margin + 80, y + 5);
+            doc.text('Grade Points', margin + 110, y + 5);
+            doc.text('Marks', margin + 150, y + 5);
+            y += 8;
+
+            // Table Content
+            subjectsData.forEach((subject, index) => {
+                if (y > pageHeight - 30) {
+                    doc.addPage();
+                    y = margin;
+                    doc.setFillColor(200, 200, 200);
+                    doc.rect(margin, y, pageWidth - 2 * margin, 8, 'F');
+                    doc.text('Subject', margin + 2, y + 5);
+                    doc.text('Credits', margin + 50, y + 5);
+                    doc.text('Grade', margin + 80, y + 5);
+                    doc.text('Grade Points', margin + 110, y + 5);
+                    doc.text('Marks', margin + 150, y + 5);
+                    y += 8;
+                }
+                doc.setFillColor(index % 2 === 0 ? 240 : 220, 240, 240);
+                doc.rect(margin, y, pageWidth - 2 * margin, 8, 'F');
+                doc.text(subject.name, margin + 2, y + 5);
+                doc.text(subject.credits.toString(), margin + 50, y + 5);
+                doc.text(subject.grade, margin + 80, y + 5);
+                doc.text(subject.gradePoints.toString(), margin + 110, y + 5);
+                doc.text(subject.marks.toString(), margin + 150, y + 5);
+                y += 8;
+            });
+
+            // Footer
+            doc.setFontSize(8);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${new Date().toLocaleString()}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+
+            doc.save('cgpa_report.pdf');
+        });
+    </script>
+</body>
+</html>
